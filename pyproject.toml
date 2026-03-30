@@ -23,6 +23,10 @@ dev = [
     "pytest==8.4.1",
     "pytest-cov==6.0.0",
 ]
+ai = [
+    "firecrawl-py>=1.0",
+    "exa-py>=1.0",
+]
 docs = [
     "mkdocs==1.6.1",
     "mkdocs-material==9.6.18",

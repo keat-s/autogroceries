@@ -15,8 +15,11 @@ from autogroceries.planner.consolidator import (
     write_shopping_csv,
 )
 from autogroceries.planner.planner import add_meal, create_plan
+from autogroceries.scraper.exa_scraper import ExaScraper
+from autogroceries.scraper.firecrawl_scraper import FirecrawlScraper
 from autogroceries.scraper.mobkitchen import MobKitchenScraper
 from autogroceries.scraper.sainsburys_recipes import SainsburysScraper
+from autogroceries.scraper.universal import UniversalScraper
 from autogroceries.scraper.waitrose_recipes import WaitroseScraper
 from autogroceries.shopper.sainsburys import SainsburysShopper
 from autogroceries.shopper.waitrose import WaitroseShopper
@@ -40,6 +43,9 @@ SCRAPERS = {
     "mobkitchen": MobKitchenScraper,
     "waitrose": WaitroseScraper,
     "sainsburys": SainsburysScraper,
+    "firecrawl": FirecrawlScraper,
+    "exa": ExaScraper,
+    "universal": UniversalScraper,
 }
 
 SOURCE_DOMAINS = {
@@ -149,9 +155,7 @@ def _scrape_url(url: str, source: str | None) -> None:
     """Scrape a single recipe URL and save it."""
     detected = source or _detect_source(url)
     if not detected:
-        click.echo(f"Could not detect source for URL: {url}")
-        click.echo("Please specify --source (mobkitchen, waitrose, or sainsburys).")
-        return
+        detected = "universal"
 
     scraper = SCRAPERS[detected]()
 
