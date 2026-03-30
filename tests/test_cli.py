@@ -30,6 +30,7 @@ def test_autogroceries_cli(store: str, ingredients_path: Path, tmp_path: Path) -
     result = runner.invoke(
         autogroceries_cli,
         [
+            "shop",
             "--store",
             store,
             "--ingredients-path",
