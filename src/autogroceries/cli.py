@@ -647,6 +647,72 @@ def serve(host: str, port: int) -> None:
     uvicorn.run("autogroceries.web.app:app", host=host, port=port)
 
 
+# ---------------------------------------------------------------------------
+# recommend command
+# ---------------------------------------------------------------------------
+
+
+@autogroceries_cli.command(
+    help="Get recipe recommendations based on your profile and history."
+)
+@click.option("--count", default=7, type=int, help="Number of recommendations.")
+@click.option("--verbose", is_flag=True, help="Show scoring breakdown.")
+def recommend(count: int, verbose: bool) -> None:
+    from autogroceries.recommender.engine import RecipeRecommender
+
+    prof = load_profile()
+    candidates = list_recipes()
+
+    if not candidates:
+        click.echo("No saved recipes. Use 'autogroceries scrape' to add some.")
+        return
+
+    recommender = RecipeRecommender(prof)
+    results = recommender.recommend(candidates, count=count)
+
+    click.echo(f"\nTop {len(results)} recommendations:\n")
+    for i, sr in enumerate(results, 1):
+        score_pct = f"{sr.score.total * 100:.0f}%"
+        click.echo(f"  {i}. {sr.recipe.title} (score: {score_pct})")
+        click.echo(f"     ID: {sr.recipe.id}")
+        if verbose:
+            s = sr.score
+            click.echo(
+                f"     dietary={s.dietary:.2f}  dislikes={s.dislikes:.2f}  "
+                f"cuisine={s.cuisine:.2f}  nutrition={s.nutrition:.2f}"
+            )
+            click.echo(
+                f"     variety={s.variety:.2f}  seasonal={s.seasonal:.2f}  "
+                f"pantry={s.pantry:.2f}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# rate command
+# ---------------------------------------------------------------------------
+
+
+@autogroceries_cli.command(help="Rate a recipe (1-5) to improve recommendations.")
+@click.argument("recipe_id")
+@click.argument("rating", type=int)
+def rate(recipe_id: str, rating: int) -> None:
+    from datetime import date as _date
+
+    from autogroceries.recommender.history import record_meal
+
+    if not 1 <= rating <= 5:
+        click.echo("Rating must be between 1 and 5.")
+        return
+
+    record_meal(recipe_id, _date.today().isoformat(), rating=rating)
+    click.echo(f"Recorded rating {rating}/5 for '{recipe_id}'.")
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
+
+
 def read_ingredients(ingredients_path: Path) -> dict[str, int]:
     """Read ingredients from a csv file.
 
