@@ -15,8 +15,11 @@ from autogroceries.planner.consolidator import (
     write_shopping_csv,
 )
 from autogroceries.planner.planner import add_meal, create_plan
+from autogroceries.scraper.exa_scraper import ExaScraper
+from autogroceries.scraper.firecrawl_scraper import FirecrawlScraper
 from autogroceries.scraper.mobkitchen import MobKitchenScraper
 from autogroceries.scraper.sainsburys_recipes import SainsburysScraper
+from autogroceries.scraper.universal import UniversalScraper
 from autogroceries.scraper.waitrose_recipes import WaitroseScraper
 from autogroceries.shopper.sainsburys import SainsburysShopper
 from autogroceries.shopper.waitrose import WaitroseShopper
@@ -40,6 +43,9 @@ SCRAPERS = {
     "mobkitchen": MobKitchenScraper,
     "waitrose": WaitroseScraper,
     "sainsburys": SainsburysScraper,
+    "firecrawl": FirecrawlScraper,
+    "exa": ExaScraper,
+    "universal": UniversalScraper,
 }
 
 SOURCE_DOMAINS = {
@@ -149,9 +155,7 @@ def _scrape_url(url: str, source: str | None) -> None:
     """Scrape a single recipe URL and save it."""
     detected = source or _detect_source(url)
     if not detected:
-        click.echo(f"Could not detect source for URL: {url}")
-        click.echo("Please specify --source (mobkitchen, waitrose, or sainsburys).")
-        return
+        detected = "universal"
 
     scraper = SCRAPERS[detected]()
 
@@ -625,6 +629,22 @@ def _interactive_profile(prof: UserProfile) -> None:
     save_profile(prof)
     click.echo("\nProfile saved!")
     _display_profile(prof)
+
+
+# ---------------------------------------------------------------------------
+# serve command
+# ---------------------------------------------------------------------------
+
+
+@autogroceries_cli.command(
+    help="Start the autogroceries web server."
+)
+@click.option("--host", default="127.0.0.1", help="Bind address.")
+@click.option("--port", default=8000, type=int, help="Port number.")
+def serve(host: str, port: int) -> None:
+    import uvicorn
+
+    uvicorn.run("autogroceries.web.app:app", host=host, port=port)
 
 
 def read_ingredients(ingredients_path: Path) -> dict[str, int]:
